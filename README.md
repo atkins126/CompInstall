@@ -1,15 +1,21 @@
+![Preview](images/app_preview.gif)
+
 # Component Installer
 
 ## Delphi app utility to auto-install component packages into IDE.
 
-![App Print](images/print.png)
-
 - [What's New](#whats-new)
 - [Description](#description)
+- [Features](#features)
 - [How to use](#how-to-use)
 - [CompInstall.ini structure](#compinstallini-structure)
 
 ## What's New
+
+- 10/26/2020 (Version 2.0)
+
+   - Compilation process now uses thread.
+   - GitHub auto-update supporting.
 
 - 05/03/2020 (Version 1.2)
 
@@ -22,6 +28,18 @@
 ## Description
 
 This app allows you to distribute your Delphi component without having to do a long task list to manually install the component into IDE (*when you are providing component sources, of course*).
+
+In addition, if the component is hosted on GitHub, you can indicate the path of the repository and the application will check for updates directly in the repository's Releases.
+
+## Features
+
+- Detects all Delphi versions installed and allows programmer to choose which IDE to install.
+- Compiles packages generating BPL files.
+- Installs packages into IDE.
+- Registers paths into Library Path.
+- Copies required resource files to compiled folder (.dfm, .res, ...).
+- Updates component hosted at GitHub automatically.
+- Supports 32 bits and 64 bits compilation.
 
 ## How to use
 
@@ -36,6 +54,8 @@ Then put the **CompInstall.exe** and **CompInstall.ini** into your component pac
 **`[General]` section**
 
 `Name` (required) = Component name displayed at install form and registered into Delphi Packages.
+
+`Version` (required) = Component version displayed at install form and used by GitHub auto-update control (if enabled).
 
 `DelphiVersions` (required) = It's a list splited by ";" with all Delphi versions supported by the component. According to Delphi versions installed in Windows and combining with this parameter, a combobox in the install form will list all possible Delphi versions.
 
@@ -61,13 +81,18 @@ If any package has this option enabled, it will be display a checkbox allowing i
 
 >Note: The app compiles your component using **Release** target. This means all packages need to be configured at default output folder (Win32\Release and Win64\Release).
 
+**GitHub section**
+
+`Repository` (optional) = Allows you to specify a GitHub repository (syntax: `GitHub account`/`Repository name`), so when app starts, it will check for component update using GitHub API, reading the latest existing release and comparing its version with current version. If the versions don't match, a dialog will be displayed asking if you want to auto-update files.
+
 ### Example
 
-In this example, there is two Delphi packages (DamPackage and DamDesignPackage). The design-time package (DamDesignPackage) is configured to install into Delphi IDE. The runtime package (DamPackage) is configured to copy dfm form file and resource file to release folder.
+In this example, there are two Delphi packages (DamPackage and DamDesignPackage). The design-time package (DamDesignPackage) is configured to install into Delphi IDE. The runtime package (DamPackage) is configured to copy dfm form file and resource file to release folder.
 
 ```
 [General]
 Name=Dam Component
+Version=1.0
 DelphiVersions=XE2;XE3;XE4;XE5;XE6;XE7;XE8;10;10.1;10.2;10.3
 Packages=DamPackage;DamDesignPackage
 AddLibrary=1
