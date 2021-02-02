@@ -40,12 +40,15 @@ end;
 
 procedure TFrmUnzip.Execute;
 var
-  Dir: String;
-  OriginalApp: String;
+  Dir, BkpDir: string;
+  AppInDest: string;
   I: Integer;
   Z: TZipFile;
-  ZFile, ZFileNormalized: String;
+  ZFile, ZFileNormalized, ZPath: string;
 begin
+  AppDir := ExtractFilePath(Application.ExeName);
+  ChDir(AppDir);
+
   Dir := GetEnvironmentVariable('UPD_PATH');
 
   if Dir.IsEmpty then
@@ -54,34 +57,39 @@ begin
   if not DirectoryExists(Dir) then
     raise Exception.Create('Component directory does not exist');
 
-  OriginalApp := TPath.Combine(Dir, COMPINST_EXE);
+  BkpDir := ExcludeTrailingPathDelimiter(Dir)+'_bkp-'+FormatDateTime('yyyymmdd-hhnnss', Now);
 
   I := 5;
-  while not System.SysUtils.DeleteFile(OriginalApp) do
+  while not System.SysUtils.RenameFile(Dir, BkpDir) do
   begin
     Dec(I);
-    if I=0 then raise Exception.Create('Could not delete old Component Installer');
+    if I=0 then raise Exception.CreateFmt('There are files in use in folder "%s"', [Dir]);
     Sleep(1000);
   end;
 
-  TFile.Copy(Application.ExeName, OriginalApp);
+  TDirectory.CreateDirectory(Dir);
 
   Z := TZipFile.Create;
   try
-    Z.Open(TPath.Combine(ExtractFilePath(Application.ExeName), 'data.zip'), zmRead);
+    Z.Open(TPath.Combine(AppDir, 'data.zip'), zmRead);
 
     for ZFile in Z.FileNames do
     begin
       ZFileNormalized := NormalizeAndRemoveFirstDir(ZFile);
-      if SameText(ZFileNormalized, COMPINST_EXE) then Continue;
-      
-      Z.Extract(ZFile, TPath.Combine(Dir, ExtractFilePath(ZFileNormalized)), False);
+      if SameText(ZFileNormalized, COMPINST_EXE) then Continue;      
+
+      ZPath := TPath.Combine(Dir, ExtractFilePath(ZFileNormalized));
+      if not DirectoryExists(ZPath) then ForceDirectories(ZPath);      
+
+      Z.Extract(ZFile, ZPath, False);
     end;
   finally
     Z.Free;
   end;
 
-  ShellExecute(0, '', PChar(OriginalApp), '', '', SW_SHOWNORMAL);
+  AppInDest := TPath.Combine(Dir, COMPINST_EXE);
+  TFile.Copy(Application.ExeName, AppInDest);
+  ShellExecute(0, '', PChar(AppInDest), '', '', SW_SHOWNORMAL);
 end;
 
 end.
